@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>โปรแกรมแปลงหน่วย</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #F5EFFF;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #E5D9F2;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #A594F9;
+            text-align: center;
+        }
+        select, input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #CDC1FF;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #A594F9;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #8A7AD8;
+        }
+        #result {
+            margin-top: 20px;
+            font-weight: bold;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>โปรแกรมแปลงหน่วย</h1>
+        <select id="category">
+            <option value="length">ความยาว</option>
+            <option value="weight">น้ำหนัก</option>
+            <option value="temperature">อุณหภูมิ</option>
+            <option value="area">พื้นที่</option>
+            <option value="volume">ปริมาตร</option>
+            <option value="time">เวลา</option>
+        </select>
+        <select id="fromUnit"></select>
+        <input type="number" id="fromValue" placeholder="ใส่ค่าที่ต้องการแปลง">
+        <select id="toUnit"></select>
+        <button onclick="convert()">แปลง</button>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const units = {
+            length: ['เมตร', 'กิโลเมตร', 'เซนติเมตร', 'มิลลิเมตร', 'ไมล์', 'ฟุต', 'นิ้ว'],
+            weight: ['กิโลกรัม', 'กรัม', 'มิลลิกรัม', 'ปอนด์', 'ออนซ์'],
+            temperature: ['เซลเซียส', 'ฟาเรนไฮต์', 'เคลวิน'],
+            area: ['ตารางเมตร', 'ตารางกิโลเมตร', 'ตารางเซนติเมตร', 'ตารางนิ้ว', 'ตารางฟุต', 'เอเคอร์', 'เฮกตาร์'],
+            volume: ['ลูกบาศก์เมตร', 'ลิตร', 'มิลลิลิตร', 'แกลลอน', 'ลูกบาศก์นิ้ว'],
+            time: ['วินาที', 'นาที', 'ชั่วโมง', 'วัน', 'สัปดาห์', 'เดือน', 'ปี']
+        };
+
+        function populateUnits() {
+            const category = document.getElementById('category').value;
+            const fromUnit = document.getElementById('fromUnit');
+            const toUnit = document.getElementById('toUnit');
+            fromUnit.innerHTML = '';
+            toUnit.innerHTML = '';
+            units[category].forEach(unit => {
+                fromUnit.innerHTML += `<option value="${unit}">${unit}</option>`;
+                toUnit.innerHTML += `<option value="${unit}">${unit}</option>`;
+            });
+        }
+
+        document.getElementById('category').addEventListener('change', populateUnits);
+
+        function convert() {
+            const category = document.getElementById('category').value;
+            const fromUnit = document.getElementById('fromUnit').value;
+            const toUnit = document.getElementById('toUnit').value;
+            const fromValue = parseFloat(document.getElementById('fromValue').value);
+            let result;
+
+            if (isNaN(fromValue)) {
+                document.getElementById('result').textContent = 'กรุณาใส่ตัวเลขที่ถูกต้อง';
+                return;
+            }
+
+            if (category === 'temperature') {
+                result = convertTemperature(fromValue, fromUnit, toUnit);
+            } else {
+                const baseValue = toBaseUnit(fromValue, fromUnit, category);
+                result = fromBaseUnit(baseValue, toUnit, category);
+            }
+
+            document.getElementById('result').textContent = `${fromValue} ${fromUnit} = ${result.toFixed(4)} ${toUnit}`;
+        }
+
+        function convertTemperature(value, from, to) {
+            let celsius;
+            if (from === 'เซลเซียส') celsius = value;
+            else if (from === 'ฟาเรนไฮต์') celsius = (value - 32) * 5/9;
+            else if (from === 'เคลวิน') celsius = value - 273.15;
+
+            if (to === 'เซลเซียส') return celsius;
+            else if (to === 'ฟาเรนไฮต์') return celsius * 9/5 + 32;
+            else if (to === 'เคลวิน') return celsius + 273.15;
+        }
+
+        function toBaseUnit(value, unit, category) {
+            // Conversion to base unit (e.g., meters for length, kilograms for weight)
+            // This is a simplified version. You may need to add more precise conversions.
+            const conversionFactors = {
+                length: {'เมตร': 1, 'กิโลเมตร': 1000, 'เซนติเมตร': 0.01, 'มิลลิเมตร': 0.001, 'ไมล์': 1609.34, 'ฟุต': 0.3048, 'นิ้ว': 0.0254},
+                weight: {'กิโลกรัม': 1, 'กรัม': 0.001, 'มิลลิกรัม': 0.000001, 'ปอนด์': 0.453592, 'ออนซ์': 0.0283495},
+                area: {'ตารางเมตร': 1, 'ตารางกิโลเมตร': 1000000, 'ตารางเซนติเมตร': 0.0001, 'ตารางนิ้ว': 0.00064516, 'ตารางฟุต': 0.092903, 'เอเคอร์': 4046.86, 'เฮกตาร์': 10000},
+                volume: {'ลูกบาศก์เมตร': 1, 'ลิตร': 0.001, 'มิลลิลิตร': 0.000001, 'แกลลอน': 0.00378541, 'ลูกบาศก์นิ้ว': 0.0000163871},
+                time: {'วินาที': 1, 'นาที': 60, 'ชั่วโมง': 3600, 'วัน': 86400, 'สัปดาห์': 604800, 'เดือน': 2592000, 'ปี': 31536000}
+            };
+            return value * conversionFactors[category][unit];
+        }
+
+        function fromBaseUnit(value, unit, category) {
+            // Conversion from base unit
+            const conversionFactors = {
+                length: {'เมตร': 1, 'กิโลเมตร': 0.001, 'เซนติเมตร': 100, 'มิลลิเมตร': 1000, 'ไมล์': 0.000621371, 'ฟุต': 3.28084, 'นิ้ว': 39.3701},
+                weight: {'กิโลกรัม': 1, 'กรัม': 1000, 'มิลลิกรัม': 1000000, 'ปอนด์': 2.20462, 'ออนซ์': 35.274},
+                area: {'ตารางเมตร': 1, 'ตารางกิโลเมตร': 0.000001, 'ตารางเซนติเมตร': 10000, 'ตารางนิ้ว': 1550, 'ตารางฟุต': 10.7639, 'เอเคอร์': 0.000247105, 'เฮกตาร์': 0.0001},
+                volume: {'ลูกบาศก์เมตร': 1, 'ลิตร': 1000, 'มิลลิลิตร': 1000000, 'แกลลอน': 264.172, 'ลูกบาศก์นิ้ว': 61023.7},
+                time: {'วินาที': 1, 'นาที': 1/60, 'ชั่วโมง': 1/3600, 'วัน': 1/86400, 'สัปดาห์': 1/604800, 'เดือน': 1/2592000, 'ปี': 1/31536000}
+            };
+            return value * conversionFactors[category][unit];
+        }
+
+        populateUnits();
+    </script>
+</body>
+</html>
